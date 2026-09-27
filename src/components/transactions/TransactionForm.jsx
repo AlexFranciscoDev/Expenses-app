@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, Link2, StickyNote, X } from 'lucide-react'
 import { KIND_FOR_TYPE } from '../../constants/categoryGroups.js'
 import { ERRORS, friendlyError } from '../../constants/copy.js'
@@ -59,6 +59,7 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
   const [linkedExpense, setLinkedExpense] = useState(initialLinkedExpense)
 
   const [keypadOpen, setKeypadOpen] = useState(true)
+  const dateInputRef = useRef(null)
   const [linkPickerOpen, setLinkPickerOpen] = useState(false)
   const [creatingCategory, setCreatingCategory] = useState(false)
   const [usage, setUsage] = useState(new Map())
@@ -96,6 +97,23 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
   const onKey = (key) => {
     setError(null)
     setAmount((current) => pressKey(current, key))
+  }
+
+  const openDatePicker = () => {
+    setKeypadOpen(false)
+    const input = dateInputRef.current
+    if (!input) return
+    // showPicker() opens the native calendar directly; focus() is the fallback
+    // for browsers without it (iOS Safari still opens its wheel picker on focus).
+    if (typeof input.showPicker === 'function') {
+      try {
+        input.showPicker()
+        return
+      } catch {
+        // fall through to focus()
+      }
+    }
+    input.focus()
   }
 
   const handleCreateCategory = async (fields) => {
@@ -257,22 +275,24 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
             <Chip active={date === yesterday} onClick={() => setDate(yesterday)}>
               Yesterday
             </Chip>
-            <label
-              className={`relative inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium ${
+            <button
+              type="button"
+              onClick={openDatePicker}
+              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium ${
                 isOtherDate ? 'border-brand bg-brand-soft text-brand' : 'border-line text-ink-soft'
               }`}
             >
               <CalendarDays size={14} />
               {isOtherDate ? formatShortDate(date) : 'Other date'}
               <input
+                ref={dateInputRef}
                 type="date"
                 aria-label="Pick a date"
                 value={date}
                 onChange={(e) => e.target.value && setDate(e.target.value)}
-                onFocus={() => setKeypadOpen(false)}
-                className="absolute inset-0 cursor-pointer opacity-0"
+                className="sr-only"
               />
-            </label>
+            </button>
           </div>
         </div>
 
