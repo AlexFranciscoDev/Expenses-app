@@ -7,15 +7,18 @@ export async function listBudgets() {
 }
 
 /**
- * Creates or updates a budget. month = null sets the default; month "YYYY-MM" sets an override.
- * categoryId = null is the global budget.
+ * Creates or updates a budget, for either the calendar month or the pay-cycle view.
+ * month = null sets the default. Otherwise: for periodType 'calendar', month is a
+ * "YYYY-MM" month key (stored as its 1st); for 'payday', month is a cycle's start
+ * date "YYYY-MM-DD", stored as-is. categoryId = null is the global budget.
  */
-export async function saveBudget({ amountCents, month = null, categoryId = null }) {
+export async function saveBudget({ amountCents, month = null, categoryId = null, periodType = 'calendar' }) {
+  const monthValue = month ? (periodType === 'calendar' ? `${month}-01` : month) : null
   const { data, error } = await supabase
     .from('budgets')
     .upsert(
-      { amount_cents: amountCents, month: month ? `${month}-01` : null, category_id: categoryId },
-      { onConflict: 'user_id,category_id,month' },
+      { amount_cents: amountCents, month: monthValue, category_id: categoryId, period_type: periodType },
+      { onConflict: 'user_id,category_id,period_type,month' },
     )
     .select()
     .single()

@@ -1,8 +1,8 @@
 import { useParams } from 'react-router-dom'
 import CategoryIconBadge from '../components/categories/CategoryIconBadge.jsx'
 import { BudgetAlert } from '../components/dashboard/BudgetSummaryCard.jsx'
-import MonthSelector from '../components/layout/MonthSelector.jsx'
 import PageHeader from '../components/layout/PageHeader.jsx'
+import PeriodSelector from '../components/layout/PeriodSelector.jsx'
 import TransactionList from '../components/transactions/TransactionList.jsx'
 import Card from '../components/ui/Card.jsx'
 import EmptyState from '../components/ui/EmptyState.jsx'
@@ -13,7 +13,6 @@ import { useData } from '../context/DataContext.jsx'
 import { useMonth } from '../context/MonthContext.jsx'
 import { useAsync } from '../hooks/useAsync.js'
 import { listTransactionsForCategory } from '../services/transactions.js'
-import { formatMonth, monthRange } from '../utils/dates.js'
 import { budgetStatus, netByCategory, resolveBudget } from '../utils/finance.js'
 import { formatMoney } from '../utils/money.js'
 
@@ -28,11 +27,16 @@ function Stat({ label, value, tone = '' }) {
 
 export default function CategoryDetailPage() {
   const { id } = useParams()
-  const { month } = useMonth()
+  const { periodMode, range, rangeLabel } = useMonth()
   const { categoriesById, budgets, version } = useData()
   const category = categoriesById.get(id)
-  const { start, end } = monthRange(month)
-  const { data, loading, error, reload } = useAsync(() => listTransactionsForCategory(id, start, end), [id, start, end, version])
+  const isCycle = periodMode === 'payday'
+  const periodType = isCycle ? 'payday' : 'calendar'
+  const periodKey = isCycle ? range.start : range.start.slice(0, 7)
+  const { data, loading, error, reload } = useAsync(
+    () => listTransactionsForCategory(id, range.start, range.end),
+    [id, range.start, range.end, version],
+  )
 
   if (!category) {
     return (
@@ -47,12 +51,12 @@ export default function CategoryDetailPage() {
   const totals = netByCategory(transactions).get(id) ?? { expense: 0, refunds: 0, net: 0 }
   const isExpense = category.kind === 'expense'
   const total = isExpense ? totals.net : transactions.reduce((s, t) => s + t.amount_cents, 0)
-  const status = budgetStatus(totals.net, resolveBudget(budgets, month, id))
+  const status = budgetStatus(totals.net, resolveBudget(budgets, periodKey, id, periodType))
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader title={category.name} subtitle={formatMonth(month)} back />
-      <MonthSelector className="mb-4" />
+      <PageHeader title={category.name} subtitle={rangeLabel} back />
+      <PeriodSelector className="mb-4" />
 
       <Card className="mb-4 p-5">
         <div className="mb-4 flex items-center gap-3">
@@ -95,7 +99,7 @@ export default function CategoryDetailPage() {
         ) : transactions.length ? (
           <TransactionList transactions={transactions} />
         ) : (
-          <EmptyState title="No transactions this month" />
+          <EmptyState title="No transactions in this period" />
         )}
       </Card>
     </div>

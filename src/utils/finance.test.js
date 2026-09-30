@@ -71,11 +71,18 @@ describe('resolveBudget', () => {
     { category_id: null, month: null, amount_cents: 100000 },
     { category_id: null, month: '2026-12-01', amount_cents: 150000 },
     { category_id: 'food', month: null, amount_cents: 30000 },
+    { category_id: null, month: null, amount_cents: 90000, period_type: 'payday' },
+    { category_id: null, month: '2026-09-28', amount_cents: 95000, period_type: 'payday' },
   ]
   it('uses the monthly override when present', () => expect(resolveBudget(budgets, '2026-12')).toBe(150000))
   it('falls back to the default', () => expect(resolveBudget(budgets, '2026-09')).toBe(100000))
   it('resolves category budgets separately', () => expect(resolveBudget(budgets, '2026-12', 'food')).toBe(30000))
   it('returns null when nothing is set', () => expect(resolveBudget([], '2026-09')).toBeNull())
+  it('defaults to the calendar type and ignores pay-cycle budgets', () => expect(resolveBudget(budgets, '2026-09-28')).toBe(100000))
+  it('resolves the pay-cycle default separately from the calendar one', () =>
+    expect(resolveBudget(budgets, '2026-10-28', null, 'payday')).toBe(90000))
+  it('uses a pay-cycle override keyed by the cycle start date', () =>
+    expect(resolveBudget(budgets, '2026-09-28', null, 'payday')).toBe(95000))
 })
 
 describe('budgetStatus', () => {

@@ -2,8 +2,8 @@ import { useState } from 'react'
 import BudgetAmountEditor from '../components/budgets/BudgetAmountEditor.jsx'
 import CategoryBudgetsSection from '../components/budgets/CategoryBudgetsSection.jsx'
 import { BudgetAlert } from '../components/dashboard/BudgetSummaryCard.jsx'
-import MonthSelector from '../components/layout/MonthSelector.jsx'
 import PageHeader from '../components/layout/PageHeader.jsx'
+import PeriodSelector from '../components/layout/PeriodSelector.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import ProgressBar from '../components/ui/ProgressBar.jsx'
@@ -13,24 +13,28 @@ import { useData } from '../context/DataContext.jsx'
 import { useMonth } from '../context/MonthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useMonthBudget } from '../hooks/useMonthBudget.js'
-import { useMonthTransactions } from '../hooks/useMonthTransactions.js'
+import { usePeriodSummaries } from '../hooks/usePeriodSummaries.js'
 import { deleteBudget, saveBudget } from '../services/budgets.js'
-import { formatMonth } from '../utils/dates.js'
 import { budgetStatus, summarize } from '../utils/finance.js'
 import { formatMoney } from '../utils/money.js'
 
 const BAR_TONE = { ok: 'brand', near: 'warning', high: 'warning', reached: 'warning', over: 'negative' }
 
 export default function BudgetsPage() {
-  const { month } = useMonth()
+  const { periodMode, range, rangeLabel } = useMonth()
   const { reloadBudgets } = useData()
   const toast = useToast()
-  const { amount, defaultBudget, override } = useMonthBudget(month)
-  const { transactions, loading, data } = useMonthTransactions(month)
+
+  const isCycle = periodMode === 'payday'
+  const periodType = isCycle ? 'payday' : 'calendar'
+  const periodKey = isCycle ? range.start : range.start.slice(0, 7)
+  const periodLabel = isCycle ? 'pay cycle' : 'month'
+
+  const { amount, defaultBudget, override } = useMonthBudget(periodKey, null, periodType)
+  const { periodTransactions, loading, data } = usePeriodSummaries(1)
   const [editingOverride, setEditingOverride] = useState(false)
 
-  const status = budgetStatus(summarize(transactions).netExpense, amount)
-  const monthName = formatMonth(month)
+  const status = budgetStatus(summarize(periodTransactions).netExpense, amount)
 
   const removeBudget = async (budget) => {
     try {
@@ -45,14 +49,16 @@ export default function BudgetsPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader title="Budgets" />
-      <MonthSelector className="mb-4" />
+      <PeriodSelector className="mb-4" />
 
       <Card className="mb-4 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Monthly budget · {monthName}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted capitalize">
+          {periodLabel} budget · {rangeLabel}
+        </p>
         {loading && !data ? (
           <Spinner className="py-6" />
         ) : status.level === 'none' ? (
-          <p className="mt-2 text-sm text-muted">No budget set. Add a default budget below and it will apply to every month.</p>
+          <p className="mt-2 text-sm text-muted">No budget set. Add a default budget below and it will apply to every {periodLabel}.</p>
         ) : (
           <>
             <div className="mt-1 flex items-baseline justify-between">
@@ -64,21 +70,21 @@ export default function BudgetsPage() {
             <ProgressBar value={status.usedPct} tone={BAR_TONE[status.level]} className="mt-3" height="h-2.5" />
             <p className="mt-2 text-[13px] text-muted">
               {status.remaining >= 0 ? `${formatMoney(status.remaining)} left` : `${formatMoney(status.overBy)} over`}
-              {override ? ' · custom budget for this month' : ''}
+              {override ? ` · custom budget for this ${periodLabel}` : ''}
             </p>
-            <BudgetAlert status={status} />
+            <BudgetAlert status={status} subject={isCycle ? 'your pay-cycle budget' : undefined} />
           </>
         )}
       </Card>
 
       <Card className="mb-4 flex flex-col gap-5 p-5">
         <BudgetAmountEditor
-          key={`default-${defaultBudget?.id ?? 'none'}-${defaultBudget?.amount_cents}`}
-          label="Default monthly budget"
-          hint="Applies to every month unless you set a custom amount for a specific month."
+          key={`default-${periodType}-${defaultBudget?.id ?? 'none'}-${defaultBudget?.amount_cents}`}
+          label={isCycle ? 'Default pay-cycle budget' : 'Default monthly budget'}
+          hint={`Applies to every ${periodLabel} unless you set a custom amount for a specific one.`}
           initialCents={defaultBudget?.amount_cents}
           onSave={async (cents) => {
-            await saveBudget({ amountCents: cents })
+            await saveBudget({ amountCents: cents, periodType })
             await reloadBudgets()
           }}
         />
@@ -86,11 +92,11 @@ export default function BudgetsPage() {
         <div className="border-t border-line pt-5">
           {override || editingOverride ? (
             <BudgetAmountEditor
-              key={`override-${month}-${override?.amount_cents}`}
-              label={`Custom budget for ${monthName}`}
+              key={`override-${periodType}-${periodKey}-${override?.amount_cents}`}
+              label={`Custom budget for ${rangeLabel}`}
               initialCents={override?.amount_cents ?? defaultBudget?.amount_cents}
               onSave={async (cents) => {
-                await saveBudget({ amountCents: cents, month })
+                await saveBudget({ amountCents: cents, month: periodKey, periodType })
                 await reloadBudgets()
                 setEditingOverride(false)
               }}
@@ -99,8 +105,8 @@ export default function BudgetsPage() {
           ) : (
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-medium">Different budget for {monthName}?</p>
-                <p className="text-xs text-muted">Useful for holidays or months with extra expenses.</p>
+                <p className="text-sm font-medium">Different budget for {rangeLabel}?</p>
+                <p className="text-xs text-muted">Useful for a {periodLabel} with extra expenses, like holidays.</p>
               </div>
               <Button variant="secondary" size="sm" onClick={() => setEditingOverride(true)}>
                 Set
@@ -110,7 +116,7 @@ export default function BudgetsPage() {
         </div>
       </Card>
 
-      <CategoryBudgetsSection month={month} transactions={transactions} />
+      <CategoryBudgetsSection periodKey={periodKey} periodType={periodType} rangeLabel={rangeLabel} transactions={periodTransactions} />
 
       <p className="px-1 text-xs leading-relaxed text-muted">
         Limits cover net spending (expenses minus refunds) for that category. Transfers such as savings or investments never count.

@@ -71,12 +71,14 @@ export function categoryBreakdown(transactions, categoriesById) {
 }
 
 /**
- * Budget for a month: month-specific override, otherwise the default (month = null).
- * categoryId = null means the global budget. Returns cents or null.
+ * Budget for a period: a period-specific override, otherwise the default (month = null).
+ * categoryId = null means the global budget. `periodType` picks calendar-month or pay-cycle
+ * budgets, which are independent; `periodKey` is a "YYYY-MM" month for 'calendar' or a
+ * cycle's start date "YYYY-MM-DD" for 'payday'. Returns cents or null.
  */
-export function resolveBudget(budgets, monthKey, categoryId = null) {
-  const scoped = budgets.filter((b) => (b.category_id ?? null) === categoryId)
-  const override = scoped.find((b) => b.month && monthKeyOf(b.month) === monthKey)
+export function resolveBudget(budgets, periodKey, categoryId = null, periodType = 'calendar') {
+  const scoped = budgets.filter((b) => (b.category_id ?? null) === categoryId && (b.period_type ?? 'calendar') === periodType)
+  const override = scoped.find((b) => b.month && (periodType === 'calendar' ? monthKeyOf(b.month) === periodKey : b.month === periodKey))
   if (override) return override.amount_cents
   const fallback = scoped.find((b) => !b.month)
   return fallback ? fallback.amount_cents : null

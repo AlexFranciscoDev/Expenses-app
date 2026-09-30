@@ -7,17 +7,17 @@ import { useData } from '../../context/DataContext.jsx'
 import { useToast } from '../../context/ToastContext.jsx'
 import { useMonthBudget } from '../../hooks/useMonthBudget.js'
 import { deleteBudget, saveBudget } from '../../services/budgets.js'
-import { formatMonth } from '../../utils/dates.js'
 import BudgetAmountEditor from './BudgetAmountEditor.jsx'
 
-/** Set a spending limit (default + optional monthly override) for one category. */
-export default function CategoryBudgetModal({ category, month, onClose }) {
+/** Set a spending limit (default + optional per-period override) for one category. */
+export default function CategoryBudgetModal({ category, periodKey, periodType, rangeLabel, onClose }) {
   const { reloadBudgets } = useData()
   const toast = useToast()
-  const { defaultBudget, override } = useMonthBudget(month, category?.id)
+  const { defaultBudget, override } = useMonthBudget(periodKey, category?.id, periodType)
   const [editingOverride, setEditingOverride] = useState(false)
   const [removing, setRemoving] = useState(false)
-  const monthName = formatMonth(month)
+  const isCycle = periodType === 'payday'
+  const periodLabel = isCycle ? 'pay cycle' : 'month'
 
   const remove = async (budget) => {
     setRemoving(true)
@@ -42,12 +42,12 @@ export default function CategoryBudgetModal({ category, month, onClose }) {
           </div>
 
           <BudgetAmountEditor
-            key={`default-${defaultBudget?.id ?? 'none'}-${defaultBudget?.amount_cents}`}
-            label="Default monthly limit"
-            hint="Applies to every month unless you set a custom amount for a specific month."
+            key={`default-${periodType}-${defaultBudget?.id ?? 'none'}-${defaultBudget?.amount_cents}`}
+            label={isCycle ? 'Default pay-cycle limit' : 'Default monthly limit'}
+            hint={`Applies to every ${periodLabel} unless you set a custom amount for a specific one.`}
             initialCents={defaultBudget?.amount_cents}
             onSave={async (cents) => {
-              await saveBudget({ amountCents: cents, categoryId: category.id })
+              await saveBudget({ amountCents: cents, categoryId: category.id, periodType })
               await reloadBudgets()
             }}
             onRemove={defaultBudget ? () => remove(defaultBudget) : undefined}
@@ -56,11 +56,11 @@ export default function CategoryBudgetModal({ category, month, onClose }) {
           <div className="border-t border-line pt-5">
             {override || editingOverride ? (
               <BudgetAmountEditor
-                key={`override-${month}-${override?.amount_cents}`}
-                label={`Custom limit for ${monthName}`}
+                key={`override-${periodType}-${periodKey}-${override?.amount_cents}`}
+                label={`Custom limit for ${rangeLabel}`}
                 initialCents={override?.amount_cents ?? defaultBudget?.amount_cents}
                 onSave={async (cents) => {
-                  await saveBudget({ amountCents: cents, month, categoryId: category.id })
+                  await saveBudget({ amountCents: cents, month: periodKey, categoryId: category.id, periodType })
                   await reloadBudgets()
                   setEditingOverride(false)
                 }}
@@ -69,8 +69,8 @@ export default function CategoryBudgetModal({ category, month, onClose }) {
             ) : (
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium">Different limit for {monthName}?</p>
-                  <p className="text-xs text-muted">Useful for a month you expect to spend more or less.</p>
+                  <p className="text-sm font-medium">Different limit for {rangeLabel}?</p>
+                  <p className="text-xs text-muted">Useful for a {periodLabel} you expect to spend more or less.</p>
                 </div>
                 <Button variant="secondary" size="sm" onClick={() => setEditingOverride(true)}>
                   Set

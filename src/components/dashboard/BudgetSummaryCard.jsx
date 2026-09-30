@@ -29,13 +29,15 @@ export function BudgetAlert({ status, subject }) {
   )
 }
 
-export default function BudgetSummaryCard({ status, income, netExpense }) {
+export default function BudgetSummaryCard({ status, income, netExpense, periodLabel = 'month', subject }) {
   const hasBudget = status.level !== 'none'
   const over = status.level === 'over'
 
   return (
     <Card className="p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{over ? 'Over budget' : hasBudget ? 'Budget left' : 'Spent this month'}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+        {over ? 'Over budget' : hasBudget ? 'Budget left' : `Spent this ${periodLabel}`}
+      </p>
       <p className={`tabular mt-1 text-[34px] font-semibold leading-tight tracking-tight ${over ? 'text-negative' : ''}`}>
         {hasBudget ? formatMoney(over ? status.overBy : status.remaining) : formatMoney(netExpense)}
       </p>
@@ -60,11 +62,11 @@ export default function BudgetSummaryCard({ status, income, netExpense }) {
             <span className={`tabular font-semibold ${over ? 'text-negative' : 'text-ink-soft'}`}>{Math.round(status.usedPct)}%</span>
           </div>
           <ProgressBar value={status.usedPct} tone={BAR_TONE[status.level]} />
-          <BudgetAlert status={status} />
+          <BudgetAlert status={status} subject={subject} />
         </div>
       ) : (
         <Link to="/budgets" className="mt-4 block rounded-2xl bg-brand-soft px-3 py-2.5 text-center text-[13px] font-semibold text-brand">
-          Set a monthly budget
+          Set a {periodLabel === 'month' ? 'monthly' : 'pay-cycle'} budget
         </Link>
       )}
     </Card>

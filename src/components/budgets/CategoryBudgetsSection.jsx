@@ -34,9 +34,9 @@ function BudgetedRow({ category, status, onClick }) {
  * Optional per-category spending limits. Only categories that already have a limit are
  * listed; "Add category limit" opens a picker for the rest.
  */
-export default function CategoryBudgetsSection({ month, transactions }) {
+export default function CategoryBudgetsSection({ periodKey, periodType, rangeLabel, transactions }) {
   const { categories, categoriesById, budgets } = useData()
-  const budgetedIds = useBudgetedCategoryIds()
+  const budgetedIds = useBudgetedCategoryIds(periodType)
   const [picking, setPicking] = useState(false)
   const [editing, setEditing] = useState(null)
 
@@ -46,7 +46,7 @@ export default function CategoryBudgetsSection({ month, transactions }) {
     .map((id) => categoriesById.get(id))
     .filter(Boolean)
     .map((category) => {
-      const amount = resolveBudget(budgets, month, category.id)
+      const amount = resolveBudget(budgets, periodKey, category.id, periodType)
       const spent = nets.get(category.id)?.net ?? 0
       return { category, status: budgetStatus(spent, amount) }
     })
@@ -108,7 +108,7 @@ export default function CategoryBudgetsSection({ month, transactions }) {
         )}
       </Modal>
 
-      <CategoryBudgetModal category={editing} month={month} onClose={() => setEditing(null)} />
+      <CategoryBudgetModal category={editing} periodKey={periodKey} periodType={periodType} rangeLabel={rangeLabel} onClose={() => setEditing(null)} />
     </Card>
   )
 }
