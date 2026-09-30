@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CalendarDays, Link2, StickyNote, X } from 'lucide-react'
 import { KIND_FOR_TYPE } from '../../constants/categoryGroups.js'
 import { ERRORS, friendlyError } from '../../constants/copy.js'
 import { PAYMENT_METHODS, TRANSACTION_TYPES } from '../../constants/transactionTypes.js'
 import { useData } from '../../context/DataContext.jsx'
 import { useCoarsePointer } from '../../hooks/useCoarsePointer.js'
+import { useNativeDatePicker } from '../../hooks/useNativeDatePicker.js'
 import { createCategory } from '../../services/categories.js'
 import { categoryUsage } from '../../services/transactions.js'
 import { pressKey } from '../../utils/amountInput.js'
@@ -59,7 +60,7 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
   const [linkedExpense, setLinkedExpense] = useState(initialLinkedExpense)
 
   const [keypadOpen, setKeypadOpen] = useState(true)
-  const dateInputRef = useRef(null)
+  const { ref: dateInputRef, open: openNativeDatePicker } = useNativeDatePicker()
   const [linkPickerOpen, setLinkPickerOpen] = useState(false)
   const [creatingCategory, setCreatingCategory] = useState(false)
   const [usage, setUsage] = useState(new Map())
@@ -101,19 +102,7 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
 
   const openDatePicker = () => {
     setKeypadOpen(false)
-    const input = dateInputRef.current
-    if (!input) return
-    // showPicker() opens the native calendar directly; focus() is the fallback
-    // for browsers without it (iOS Safari still opens its wheel picker on focus).
-    if (typeof input.showPicker === 'function') {
-      try {
-        input.showPicker()
-        return
-      } catch {
-        // fall through to focus()
-      }
-    }
-    input.focus()
+    openNativeDatePicker()
   }
 
   const handleCreateCategory = async (fields) => {

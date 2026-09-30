@@ -7,10 +7,14 @@ import ProgressBar from '../ui/ProgressBar.jsx'
 
 const BAR_TONE = { ok: 'brand', near: 'warning', high: 'warning', reached: 'warning', over: 'negative' }
 
-export function BudgetAlert({ status }) {
+export function BudgetAlert({ status, subject }) {
   if (!['near', 'high', 'reached', 'over'].includes(status.level)) return null
   const message =
-    status.level === 'over' ? BUDGET_MESSAGES.over(status.overBy) : BUDGET_MESSAGES[status.level](status.usedPct)
+    status.level === 'over'
+      ? BUDGET_MESSAGES.over(status.overBy, subject)
+      : status.level === 'high'
+        ? BUDGET_MESSAGES.high(status.usedPct, subject)
+        : BUDGET_MESSAGES[status.level](subject)
   const over = status.level === 'over'
   const Icon = over ? TriangleAlert : Info
   return (

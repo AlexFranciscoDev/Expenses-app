@@ -1,14 +1,14 @@
 import { useState } from 'react'
+import BudgetAmountEditor from '../components/budgets/BudgetAmountEditor.jsx'
+import CategoryBudgetsSection from '../components/budgets/CategoryBudgetsSection.jsx'
 import { BudgetAlert } from '../components/dashboard/BudgetSummaryCard.jsx'
 import MonthSelector from '../components/layout/MonthSelector.jsx'
 import PageHeader from '../components/layout/PageHeader.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
-import { Label } from '../components/ui/Field.jsx'
-import MoneyInput from '../components/ui/MoneyInput.jsx'
 import ProgressBar from '../components/ui/ProgressBar.jsx'
 import Spinner from '../components/ui/Spinner.jsx'
-import { ERRORS, friendlyError } from '../constants/copy.js'
+import { friendlyError } from '../constants/copy.js'
 import { useData } from '../context/DataContext.jsx'
 import { useMonth } from '../context/MonthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -17,53 +17,9 @@ import { useMonthTransactions } from '../hooks/useMonthTransactions.js'
 import { deleteBudget, saveBudget } from '../services/budgets.js'
 import { formatMonth } from '../utils/dates.js'
 import { budgetStatus, summarize } from '../utils/finance.js'
-import { centsToInput, formatMoney, parseMoneyToCents } from '../utils/money.js'
+import { formatMoney } from '../utils/money.js'
 
 const BAR_TONE = { ok: 'brand', near: 'warning', high: 'warning', reached: 'warning', over: 'negative' }
-
-function BudgetEditor({ label, hint, initialCents, onSave, onRemove, saveLabel = 'Save' }) {
-  const [value, setValue] = useState(centsToInput(initialCents))
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState(null)
-  const toast = useToast()
-
-  const save = async (e) => {
-    e.preventDefault()
-    const cents = parseMoneyToCents(value)
-    if (!cents) return setError(ERRORS.invalidAmount)
-    setSaving(true)
-    setError(null)
-    try {
-      await onSave(cents)
-      toast('Budget saved')
-    } catch (err) {
-      setError(friendlyError(err))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <form onSubmit={save}>
-      <Label>{label}</Label>
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <MoneyInput value={value} onChange={setValue} placeholder="1,000" />
-        </div>
-        <Button type="submit" loading={saving}>
-          {saveLabel}
-        </Button>
-      </div>
-      {hint && <p className="mt-1.5 text-xs text-muted">{hint}</p>}
-      {error && <p className="mt-1.5 text-xs text-negative">{error}</p>}
-      {onRemove && (
-        <button type="button" onClick={onRemove} className="mt-2 text-xs font-semibold text-muted hover:text-negative">
-          Remove
-        </button>
-      )}
-    </form>
-  )
-}
 
 export default function BudgetsPage() {
   const { month } = useMonth()
@@ -116,7 +72,7 @@ export default function BudgetsPage() {
       </Card>
 
       <Card className="mb-4 flex flex-col gap-5 p-5">
-        <BudgetEditor
+        <BudgetAmountEditor
           key={`default-${defaultBudget?.id ?? 'none'}-${defaultBudget?.amount_cents}`}
           label="Default monthly budget"
           hint="Applies to every month unless you set a custom amount for a specific month."
@@ -129,7 +85,7 @@ export default function BudgetsPage() {
 
         <div className="border-t border-line pt-5">
           {override || editingOverride ? (
-            <BudgetEditor
+            <BudgetAmountEditor
               key={`override-${month}-${override?.amount_cents}`}
               label={`Custom budget for ${monthName}`}
               initialCents={override?.amount_cents ?? defaultBudget?.amount_cents}
@@ -154,8 +110,10 @@ export default function BudgetsPage() {
         </div>
       </Card>
 
+      <CategoryBudgetsSection month={month} transactions={transactions} />
+
       <p className="px-1 text-xs leading-relaxed text-muted">
-        The budget covers your net spending: all expenses minus refunds. Transfers such as savings or investments don&apos;t count.
+        Limits cover net spending (expenses minus refunds) for that category. Transfers such as savings or investments never count.
       </p>
     </div>
   )

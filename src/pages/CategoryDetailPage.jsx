@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import CategoryIconBadge from '../components/categories/CategoryIconBadge.jsx'
+import { BudgetAlert } from '../components/dashboard/BudgetSummaryCard.jsx'
 import MonthSelector from '../components/layout/MonthSelector.jsx'
 import PageHeader from '../components/layout/PageHeader.jsx'
 import TransactionList from '../components/transactions/TransactionList.jsx'
@@ -81,6 +82,7 @@ export default function CategoryDetailPage() {
               <span className="tabular font-semibold">{Math.round(status.usedPct)}%</span>
             </div>
             <ProgressBar value={status.usedPct} tone={status.level === 'over' ? 'negative' : status.level === 'ok' ? 'brand' : 'warning'} />
+            <BudgetAlert status={status} subject={`your ${category.name} limit`} />
           </div>
         )}
       </Card>

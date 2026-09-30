@@ -1,11 +1,13 @@
 import { formatMoney } from '../utils/money.js'
 
 // Reusable UI messages. Keeping them here makes future translation easy.
+// `subject` lets the same wording work for the global budget ("your monthly budget")
+// and a category limit ("your Coffee limit").
 export const BUDGET_MESSAGES = {
-  near: () => "You're getting close to your monthly budget.",
-  high: (pct) => `You've used ${Math.floor(pct)}% of your monthly budget.`,
-  reached: () => "You've reached your monthly budget.",
-  over: (overBy) => `You're over your monthly budget by ${formatMoney(overBy)}.`,
+  near: (subject = 'your monthly budget') => `You're getting close to ${subject}.`,
+  high: (pct, subject = 'your monthly budget') => `You've used ${Math.floor(pct)}% of ${subject}.`,
+  reached: (subject = 'your monthly budget') => `You've reached ${subject}.`,
+  over: (overBy, subject = 'your monthly budget') => `You're over ${subject} by ${formatMoney(overBy)}.`,
 }
 
 export const ERRORS = {
