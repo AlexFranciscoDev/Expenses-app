@@ -127,6 +127,19 @@ export function summariesByMonth(transactions, monthKeys) {
   return monthKeys.map((month) => ({ month, ...summarize(groups.get(month)) }))
 }
 
+/**
+ * Summaries for arbitrary date ranges (oldest first), e.g. calendar months or pay
+ * cycles. Each range is `{ key, start, end }`; `key` just identifies it for charts.
+ */
+export function summariesByRange(transactions, ranges) {
+  return ranges.map(({ key, start, end }) => ({
+    key,
+    start,
+    end,
+    ...summarize(transactions.filter((t) => t.occurred_on >= start && t.occurred_on <= end)),
+  }))
+}
+
 /** Total refunded against a specific expense */
 export function refundedFor(expenseId, transactions) {
   return transactions

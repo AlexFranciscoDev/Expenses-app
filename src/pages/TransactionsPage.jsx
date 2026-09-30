@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, ReceiptText } from 'lucide-react'
-import MonthSelector from '../components/layout/MonthSelector.jsx'
 import PageHeader from '../components/layout/PageHeader.jsx'
+import PeriodSelector from '../components/layout/PeriodSelector.jsx'
 import DateRangeFields from '../components/transactions/DateRangeFields.jsx'
 import TransactionFilters, { EMPTY_FILTERS, applyFilters } from '../components/transactions/TransactionFilters.jsx'
 import TransactionList from '../components/transactions/TransactionList.jsx'
@@ -15,7 +15,7 @@ import { useData } from '../context/DataContext.jsx'
 import { useMonth } from '../context/MonthContext.jsx'
 import { useAsync } from '../hooks/useAsync.js'
 import { listTransactionsBetween } from '../services/transactions.js'
-import { formatShortDate, monthRange, shiftMonth, toISODate, todayISO } from '../utils/dates.js'
+import { formatShortDate, shiftMonth, toISODate, todayISO } from '../utils/dates.js'
 import { summarize } from '../utils/finance.js'
 import { formatMoney } from '../utils/money.js'
 
@@ -28,21 +28,21 @@ const SCOPES = [
 
 const defaultCustomRange = () => ({ start: toISODate(new Date(Date.now() - 6 * 86400000)), end: todayISO() })
 
-function rangeFor(scope, month, customRange) {
-  if (scope === 'month') return monthRange(month)
+function rangeFor(scope, month, customRange, activeRange) {
+  if (scope === 'month') return activeRange
   if (scope === 'year') return { start: `${month.slice(0, 4)}-01-01`, end: `${month.slice(0, 4)}-12-31` }
   if (scope === 'custom') return customRange
   return { start: '1900-01-01', end: '2999-12-31' }
 }
 
 export default function TransactionsPage() {
-  const { month } = useMonth()
+  const { month, range } = useMonth()
   const { categoriesById, version } = useData()
   const [scope, setScope] = useState('month')
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [customRange, setCustomRange] = useState(defaultCustomRange)
 
-  const { start, end } = rangeFor(scope, month, customRange)
+  const { start, end } = rangeFor(scope, month, customRange, range)
   const { data, loading, error, reload } = useAsync(() => listTransactionsBetween(start, end), [start, end, version])
 
   const filtered = useMemo(() => applyFilters(data ?? [], filters, categoriesById), [data, filters, categoriesById])
@@ -54,7 +54,7 @@ export default function TransactionsPage() {
         <PageHeader title="Transactions" />
         <div className="flex flex-col gap-3">
           <SegmentedControl options={SCOPES} value={scope} onChange={setScope} size="sm" />
-          {scope === 'month' && <MonthSelector />}
+          {scope === 'month' && <PeriodSelector />}
           {scope === 'year' && <YearLabel month={month} />}
           {scope === 'custom' && <DateRangeFields start={customRange.start} end={customRange.end} onChange={setCustomRange} />}
           <TransactionFilters filters={filters} onChange={setFilters} />

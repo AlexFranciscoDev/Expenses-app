@@ -4,7 +4,7 @@ import { ChevronRight, Download, LogOut, Tags } from 'lucide-react'
 import PageHeader from '../components/layout/PageHeader.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
-import { Input, Label } from '../components/ui/Field.jsx'
+import { Input, Label, Select } from '../components/ui/Field.jsx'
 import { friendlyError } from '../constants/copy.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useData } from '../context/DataContext.jsx'
@@ -44,6 +44,8 @@ export default function SettingsPage() {
   const [name, setName] = useState(profile?.display_name ?? '')
   const [saving, setSaving] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [payday, setPayday] = useState(profile?.payday ? String(profile.payday) : '')
+  const [savingPayday, setSavingPayday] = useState(false)
 
   const saveName = async (e) => {
     e.preventDefault()
@@ -55,6 +57,19 @@ export default function SettingsPage() {
       toast(friendlyError(err), 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const savePayday = async (e) => {
+    e.preventDefault()
+    setSavingPayday(true)
+    try {
+      setProfile(await updateProfile(user.id, { payday: payday === '' ? null : Number(payday) }))
+      toast(payday === '' ? 'Payday cleared' : 'Payday saved')
+    } catch (err) {
+      toast(friendlyError(err), 'error')
+    } finally {
+      setSavingPayday(false)
     }
   }
 
@@ -84,6 +99,30 @@ export default function SettingsPage() {
             </Button>
           </div>
           <p className="mt-2 text-xs text-muted">{user?.email}</p>
+        </form>
+      </Card>
+
+      <Card className="mb-4 p-5">
+        <form onSubmit={savePayday}>
+          <Label htmlFor="payday">Payday</Label>
+          <div className="flex gap-2">
+            <Select id="payday" value={payday} onChange={(e) => setPayday(e.target.value)} className="flex-1">
+              <option value="">Not set</option>
+              {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                  {d === 31 ? ' (or the last day of shorter months)' : ''}
+                </option>
+              ))}
+            </Select>
+            <Button type="submit" variant="secondary" loading={savingPayday}>
+              Save
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-muted">
+            The day you get paid. Adds a "Pay cycle" view next to Home, Transactions and Analytics, running from one payday to the day
+            before the next.
+          </p>
         </form>
       </Card>
 

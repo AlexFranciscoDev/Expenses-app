@@ -17,6 +17,9 @@ income, spending, budget and savings.
 4. Copy your project URL and **anon/publishable** key from **Project Settings → API**.
    Never use the `service_role` key in the frontend.
 
+New files appear in `supabase/migrations/` over time as features are added. Each one only
+needs to be run once, in filename order: open it, paste it into the **SQL Editor** and run it.
+
 ## 2. Run locally
 
 ```bash

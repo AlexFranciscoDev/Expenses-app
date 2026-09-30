@@ -8,6 +8,7 @@ import {
   resolveBudget,
   summarize,
   summariesByMonth,
+  summariesByRange,
   transactionSign,
 } from './finance.js'
 
@@ -109,6 +110,24 @@ describe('summariesByMonth', () => {
       ['2026-08', '2026-09'],
     )
     expect(rows.map((r) => r.netExpense)).toEqual([100, 200])
+  })
+})
+
+describe('summariesByRange', () => {
+  it('groups by arbitrary, non-calendar-month ranges (e.g. pay cycles)', () => {
+    const rows = summariesByRange(
+      [
+        tx('expense', 100, 'a', { occurred_on: '2026-08-27' }), // just before the cycle
+        tx('expense', 200, 'a', { occurred_on: '2026-08-28' }), // first day of cycle 1
+        tx('expense', 300, 'a', { occurred_on: '2026-09-27' }), // last day of cycle 1
+        tx('expense', 400, 'a', { occurred_on: '2026-09-28' }), // first day of cycle 2
+      ],
+      [
+        { key: 'c1', start: '2026-08-28', end: '2026-09-27' },
+        { key: 'c2', start: '2026-09-28', end: '2026-10-27' },
+      ],
+    )
+    expect(rows.map((r) => r.netExpense)).toEqual([500, 400])
   })
 })
 
