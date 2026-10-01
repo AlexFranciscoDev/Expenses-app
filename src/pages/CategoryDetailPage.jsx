@@ -9,10 +9,12 @@ import EmptyState from '../components/ui/EmptyState.jsx'
 import ErrorNotice from '../components/ui/ErrorNotice.jsx'
 import ProgressBar from '../components/ui/ProgressBar.jsx'
 import Spinner from '../components/ui/Spinner.jsx'
+import { budgetTailNote } from '../constants/copy.js'
 import { useData } from '../context/DataContext.jsx'
 import { useMonth } from '../context/MonthContext.jsx'
 import { useAsync } from '../hooks/useAsync.js'
 import { listTransactionsForCategory } from '../services/transactions.js'
+import { payCycleTailBeforeMonth } from '../utils/dates.js'
 import { budgetStatus, netByCategory, resolveBudget } from '../utils/finance.js'
 import { formatMoney } from '../utils/money.js'
 
@@ -27,15 +29,20 @@ function Stat({ label, value, tone = '' }) {
 
 export default function CategoryDetailPage() {
   const { id } = useParams()
-  const { periodMode, range, rangeLabel } = useMonth()
+  const { payday, periodMode, range, rangeLabel } = useMonth()
   const { categoriesById, budgets, version } = useData()
   const category = categoriesById.get(id)
   const isCycle = periodMode === 'payday'
   const periodType = isCycle ? 'payday' : 'calendar'
   const periodKey = isCycle ? range.start : range.start.slice(0, 7)
+
+  // In calendar mode, also fetch the pay-cycle "tail" (spent after payday, before this
+  // month started) so it can still count against this category's limit.
+  const tail = !isCycle && payday ? payCycleTailBeforeMonth(payday, periodKey) : null
+  const fetchStart = tail ? tail.start : range.start
   const { data, loading, error, reload } = useAsync(
-    () => listTransactionsForCategory(id, range.start, range.end),
-    [id, range.start, range.end, version],
+    () => listTransactionsForCategory(id, fetchStart, range.end),
+    [id, fetchStart, range.end, version],
   )
 
   if (!category) {
@@ -47,11 +54,14 @@ export default function CategoryDetailPage() {
     )
   }
 
-  const transactions = data ?? []
+  const allTransactions = data ?? []
+  const transactions = tail ? allTransactions.filter((t) => t.occurred_on >= range.start) : allTransactions
   const totals = netByCategory(transactions).get(id) ?? { expense: 0, refunds: 0, net: 0 }
   const isExpense = category.kind === 'expense'
   const total = isExpense ? totals.net : transactions.reduce((s, t) => s + t.amount_cents, 0)
-  const status = budgetStatus(totals.net, resolveBudget(budgets, periodKey, id, periodType))
+  const tailNet = tail ? (netByCategory(allTransactions).get(id)?.net ?? 0) - totals.net : 0
+  const status = budgetStatus(totals.net + tailNet, resolveBudget(budgets, periodKey, id, periodType))
+  const tailNote = budgetTailNote(tailNet, tail)
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -86,6 +96,7 @@ export default function CategoryDetailPage() {
               <span className="tabular font-semibold">{Math.round(status.usedPct)}%</span>
             </div>
             <ProgressBar value={status.usedPct} tone={status.level === 'over' ? 'negative' : status.level === 'ok' ? 'brand' : 'warning'} />
+            {tailNote && <p className="mt-2 text-[12px] text-muted">{tailNote}</p>}
             <BudgetAlert status={status} subject={`your ${category.name} limit`} />
           </div>
         )}

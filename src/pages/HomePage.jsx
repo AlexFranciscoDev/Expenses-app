@@ -10,11 +10,13 @@ import TopCategories from '../components/dashboard/TopCategories.jsx'
 import PeriodSelector from '../components/layout/PeriodSelector.jsx'
 import ErrorNotice from '../components/ui/ErrorNotice.jsx'
 import Spinner from '../components/ui/Spinner.jsx'
+import { budgetTailNote } from '../constants/copy.js'
 import { useData } from '../context/DataContext.jsx'
 import { useMonth } from '../context/MonthContext.jsx'
-import { useMonthBudget } from '../hooks/useMonthBudget.js'
+import { useBudgetedCategoryIds, useMonthBudget } from '../hooks/useMonthBudget.js'
 import { usePeriodSummaries } from '../hooks/usePeriodSummaries.js'
-import { budgetStatus, categoryBreakdown, percentChange, resolveBudget } from '../utils/finance.js'
+import { payCycleTailBeforeMonth } from '../utils/dates.js'
+import { budgetStatus, categoryBreakdown, netByCategory, netExpenseInRange, percentChange, resolveBudget } from '../utils/finance.js'
 
 function greeting() {
   const h = new Date().getHours()
@@ -24,7 +26,7 @@ function greeting() {
 }
 
 export default function HomePage() {
-  const { month, periodMode, isCurrentPeriod, range } = useMonth()
+  const { month, payday, periodMode, isCurrentPeriod, range } = useMonth()
   const { profile, categoriesById, budgets } = useData()
 
   const isCycle = periodMode === 'payday'
@@ -34,21 +36,38 @@ export default function HomePage() {
   const subject = isCycle ? 'your pay-cycle budget' : undefined
 
   const { amount: budget } = useMonthBudget(periodKey, null, periodType)
+  const budgetedCategoryIds = useBudgetedCategoryIds(periodType)
   const { summaries, periodTransactions, loading, error, reload, data } = usePeriodSummaries(2)
 
   const [previous, current] = summaries
-  const status = current ? budgetStatus(current.netExpense, budget) : null
+
+  // In calendar mode, money spent after payday but before this month started already
+  // came out of this paycheck — it still counts against this month's (and its
+  // categories') budget, even though it falls outside this calendar month's own data.
+  const tail = !isCycle && payday ? payCycleTailBeforeMonth(payday, month) : null
+  const tailTransactions = useMemo(
+    () => (tail ? (data ?? []).filter((t) => t.occurred_on >= tail.start && t.occurred_on <= tail.end) : []),
+    [data, tail],
+  )
+  const tailNet = netExpenseInRange(data ?? [], tail)
+  const status = current ? budgetStatus(current.netExpense + tailNet, budget) : null
+  const tailNote = budgetTailNote(tailNet, tail)
+
   const breakdown = useMemo(() => categoryBreakdown(periodTransactions, categoriesById), [periodTransactions, categoriesById])
+  // Driven by which categories actually have a limit — not by `breakdown`, which would
+  // miss a category whose only spending this period is in the tail (0 this month so far).
+  const budgetNets = useMemo(() => netByCategory([...periodTransactions, ...tailTransactions]), [periodTransactions, tailTransactions])
   const categoryAlerts = useMemo(
     () =>
-      breakdown
-        .filter((r) => r.category)
-        .map((r) => ({
-          category: r.category,
-          status: budgetStatus(r.net, resolveBudget(budgets, periodKey, r.categoryId, periodType)),
+      budgetedCategoryIds
+        .map((id) => categoriesById.get(id))
+        .filter(Boolean)
+        .map((category) => ({
+          category,
+          status: budgetStatus(budgetNets.get(category.id)?.net ?? 0, resolveBudget(budgets, periodKey, category.id, periodType)),
         }))
         .filter((r) => ['near', 'high', 'reached', 'over'].includes(r.status.level)),
-    [breakdown, budgets, periodKey, periodType],
+    [budgetedCategoryIds, budgetNets, categoriesById, budgets, periodKey, periodType],
   )
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
@@ -81,7 +100,14 @@ export default function HomePage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
           <div className="flex flex-col gap-4">
-            <BudgetSummaryCard status={status} income={current.income} netExpense={current.netExpense} periodLabel={periodLabel} subject={subject} />
+            <BudgetSummaryCard
+              status={status}
+              income={current.income}
+              netExpense={current.netExpense}
+              periodLabel={periodLabel}
+              subject={subject}
+              tailNote={tailNote}
+            />
             <CategoryBudgetAlerts rows={categoryAlerts} />
             <SavingsCard saved={current.saved} savingsRate={current.savingsRate} />
             <MonthComparison change={percentChange(current.netExpense, previous.netExpense)} isCurrentMonth={isCurrentPeriod} periodLabel={periodLabel} />

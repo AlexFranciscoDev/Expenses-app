@@ -90,6 +90,22 @@ export function payCycleRange(payday, offset = 0, today = new Date()) {
   return { start: toISODate(start), end: toISODate(end) }
 }
 
+/**
+ * The slice of the PREVIOUS calendar month that belongs to the pay cycle covering
+ * day 1 of `monthKey` — e.g. with payday 28, October's tail is "2026-09-28".."2026-09-30":
+ * money from that paycheck that was spent before the calendar month even started.
+ * Returns null when there is no tail (payday is the 1st, so cycle == calendar month).
+ */
+export function payCycleTailBeforeMonth(payday, monthKey) {
+  const [y, m] = monthKey.split('-').map(Number) // m is 1-indexed
+  const monthIndex = m - 1
+  if (1 >= clampDayOfMonth(y, monthIndex, payday)) return null
+  const prevMonthIndex = monthIndex - 1
+  const start = new Date(y, prevMonthIndex, clampDayOfMonth(y, prevMonthIndex, payday))
+  const end = new Date(y, monthIndex, 0) // day 0 of this month = last day of the previous one
+  return { start: toISODate(start), end: toISODate(end) }
+}
+
 /** "28 Aug – 27 Sep 2026" (year shown once, or on both sides if the range spans two) */
 export function formatRangeLabel(range) {
   const start = parseISODate(range.start)
@@ -107,4 +123,13 @@ export function formatRangeLabel(range) {
 /** "28 Aug" — compact label for chart axes */
 export function formatDayMonth(iso) {
   return parseISODate(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
+/** "28–30 Sept" (or "28 Sept – 2 Oct" across months) — compact label for a short tail range */
+export function formatTailRange({ start, end }) {
+  if (start.slice(0, 7) !== end.slice(0, 7)) return `${formatDayMonth(start)} – ${formatDayMonth(end)}`
+  const startDay = parseISODate(start).getDate()
+  const endDay = parseISODate(end).getDate()
+  const month = parseISODate(end).toLocaleDateString('en-GB', { month: 'short' })
+  return startDay === endDay ? `${startDay} ${month}` : `${startDay}–${endDay} ${month}`
 }

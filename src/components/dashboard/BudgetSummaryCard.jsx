@@ -29,7 +29,7 @@ export function BudgetAlert({ status, subject }) {
   )
 }
 
-export default function BudgetSummaryCard({ status, income, netExpense, periodLabel = 'month', subject }) {
+export default function BudgetSummaryCard({ status, income, netExpense, periodLabel = 'month', subject, tailNote }) {
   const hasBudget = status.level !== 'none'
   const over = status.level === 'over'
 
@@ -62,6 +62,7 @@ export default function BudgetSummaryCard({ status, income, netExpense, periodLa
             <span className={`tabular font-semibold ${over ? 'text-negative' : 'text-ink-soft'}`}>{Math.round(status.usedPct)}%</span>
           </div>
           <ProgressBar value={status.usedPct} tone={BAR_TONE[status.level]} />
+          {tailNote && <p className="mt-2 text-[12px] text-muted">{tailNote}</p>}
           <BudgetAlert status={status} subject={subject} />
         </div>
       ) : (

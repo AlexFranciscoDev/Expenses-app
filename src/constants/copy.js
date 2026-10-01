@@ -1,3 +1,4 @@
+import { formatTailRange } from '../utils/dates.js'
 import { formatMoney } from '../utils/money.js'
 
 // Reusable UI messages. Keeping them here makes future translation easy.
@@ -8,6 +9,16 @@ export const BUDGET_MESSAGES = {
   high: (pct, subject = 'your monthly budget') => `You've used ${Math.floor(pct)}% of ${subject}.`,
   reached: (subject = 'your monthly budget') => `You've reached ${subject}.`,
   over: (overBy, subject = 'your monthly budget') => `You're over ${subject} by ${formatMoney(overBy)}.`,
+}
+
+/**
+ * Explains a calendar-month budget's carry-over: spending between payday and the
+ * end of the previous month, which already came out of this paycheck. Returns
+ * null when there's nothing to explain (no tail, or nothing spent in it).
+ */
+export function budgetTailNote(amountCents, tail) {
+  if (!tail || !amountCents) return null
+  return `Includes ${formatMoney(amountCents)} spent ${formatTailRange(tail)} — after payday, before this month started.`
 }
 
 export const ERRORS = {

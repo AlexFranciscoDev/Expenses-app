@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatRangeLabel, payCycleRange } from './dates.js'
+import { formatRangeLabel, formatTailRange, payCycleRange, payCycleTailBeforeMonth } from './dates.js'
 
 describe('payCycleRange', () => {
   it('starts a new cycle on the payday itself', () => {
@@ -24,6 +24,31 @@ describe('payCycleRange', () => {
   it('handles payday 1 (cycle == calendar month)', () => {
     expect(payCycleRange(1, 0, new Date(2026, 8, 15))).toEqual({ start: '2026-09-01', end: '2026-09-30' })
   })
+})
+
+describe('payCycleTailBeforeMonth', () => {
+  it('returns the days from payday to the end of the previous month', () => {
+    expect(payCycleTailBeforeMonth(28, '2026-10')).toEqual({ start: '2026-09-28', end: '2026-09-30' })
+  })
+
+  it('returns null when payday is the 1st (cycle == calendar month)', () => {
+    expect(payCycleTailBeforeMonth(1, '2026-10')).toBeNull()
+  })
+
+  it('clamps payday to the previous month length', () => {
+    // payday 31 in a month before a 30-day one: tail starts the 30th
+    expect(payCycleTailBeforeMonth(31, '2026-05')).toEqual({ start: '2026-04-30', end: '2026-04-30' })
+  })
+
+  it('works for a mid-month payday', () => {
+    expect(payCycleTailBeforeMonth(15, '2026-10')).toEqual({ start: '2026-09-15', end: '2026-09-30' })
+  })
+})
+
+describe('formatTailRange', () => {
+  it('formats a same-month range', () => expect(formatTailRange({ start: '2026-09-28', end: '2026-09-30' })).toBe('28–30 Sept'))
+  it('formats a single day', () => expect(formatTailRange({ start: '2026-04-30', end: '2026-04-30' })).toBe('30 Apr'))
+  it('formats a range spanning two months', () => expect(formatTailRange({ start: '2026-09-28', end: '2026-10-02' })).toBe('28 Sept – 2 Oct'))
 })
 
 describe('formatRangeLabel', () => {

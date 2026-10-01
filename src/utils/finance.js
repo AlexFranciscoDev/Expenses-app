@@ -142,6 +142,12 @@ export function summariesByRange(transactions, ranges) {
   }))
 }
 
+/** Net expense of transactions whose date falls within `range` (inclusive). `range` may be null. */
+export function netExpenseInRange(transactions, range) {
+  if (!range) return 0
+  return summarize(transactions.filter((t) => t.occurred_on >= range.start && t.occurred_on <= range.end)).netExpense
+}
+
 /** Total refunded against a specific expense */
 export function refundedFor(expenseId, transactions) {
   return transactions

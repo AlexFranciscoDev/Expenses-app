@@ -34,13 +34,15 @@ function BudgetedRow({ category, status, onClick }) {
  * Optional per-category spending limits. Only categories that already have a limit are
  * listed; "Add category limit" opens a picker for the rest.
  */
-export default function CategoryBudgetsSection({ periodKey, periodType, rangeLabel, transactions }) {
+export default function CategoryBudgetsSection({ periodKey, periodType, rangeLabel, transactions, tailTransactions = [] }) {
   const { categories, categoriesById, budgets } = useData()
   const budgetedIds = useBudgetedCategoryIds(periodType)
   const [picking, setPicking] = useState(false)
   const [editing, setEditing] = useState(null)
 
-  const nets = useMemo(() => netByCategory(transactions), [transactions])
+  // tailTransactions (calendar mode only): spent after payday, before this month started —
+  // still comes out of this limit, same reasoning as the global budget's carry-over.
+  const nets = useMemo(() => netByCategory([...transactions, ...tailTransactions]), [transactions, tailTransactions])
 
   const rows = budgetedIds
     .map((id) => categoriesById.get(id))

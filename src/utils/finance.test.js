@@ -3,6 +3,7 @@ import {
   budgetStatus,
   categoryBreakdown,
   netByCategory,
+  netExpenseInRange,
   percentChange,
   refundedFor,
   resolveBudget,
@@ -136,6 +137,12 @@ describe('summariesByRange', () => {
     )
     expect(rows.map((r) => r.netExpense)).toEqual([500, 400])
   })
+})
+
+describe('netExpenseInRange', () => {
+  const list = [tx('expense', 100, 'a', { occurred_on: '2026-09-27' }), tx('expense', 200, 'a', { occurred_on: '2026-09-29' }), tx('refund', 50, 'a', { occurred_on: '2026-09-29' })]
+  it('sums net expense within the range', () => expect(netExpenseInRange(list, { start: '2026-09-28', end: '2026-09-30' })).toBe(150))
+  it('returns 0 for a null range', () => expect(netExpenseInRange(list, null)).toBe(0))
 })
 
 describe('transactionSign', () => {

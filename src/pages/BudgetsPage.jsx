@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import BudgetAmountEditor from '../components/budgets/BudgetAmountEditor.jsx'
 import CategoryBudgetsSection from '../components/budgets/CategoryBudgetsSection.jsx'
 import { BudgetAlert } from '../components/dashboard/BudgetSummaryCard.jsx'
@@ -8,20 +8,21 @@ import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import ProgressBar from '../components/ui/ProgressBar.jsx'
 import Spinner from '../components/ui/Spinner.jsx'
-import { friendlyError } from '../constants/copy.js'
+import { budgetTailNote, friendlyError } from '../constants/copy.js'
 import { useData } from '../context/DataContext.jsx'
 import { useMonth } from '../context/MonthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useMonthBudget } from '../hooks/useMonthBudget.js'
 import { usePeriodSummaries } from '../hooks/usePeriodSummaries.js'
 import { deleteBudget, saveBudget } from '../services/budgets.js'
-import { budgetStatus, summarize } from '../utils/finance.js'
+import { payCycleTailBeforeMonth } from '../utils/dates.js'
+import { budgetStatus, netExpenseInRange, summarize } from '../utils/finance.js'
 import { formatMoney } from '../utils/money.js'
 
 const BAR_TONE = { ok: 'brand', near: 'warning', high: 'warning', reached: 'warning', over: 'negative' }
 
 export default function BudgetsPage() {
-  const { periodMode, range, rangeLabel } = useMonth()
+  const { payday, periodMode, range, rangeLabel } = useMonth()
   const { reloadBudgets } = useData()
   const toast = useToast()
 
@@ -31,10 +32,18 @@ export default function BudgetsPage() {
   const periodLabel = isCycle ? 'pay cycle' : 'month'
 
   const { amount, defaultBudget, override } = useMonthBudget(periodKey, null, periodType)
-  const { periodTransactions, loading, data } = usePeriodSummaries(1)
+  // count=2 so the previous calendar month's tail (if any) is already in `data`.
+  const { periodTransactions, loading, data } = usePeriodSummaries(2)
   const [editingOverride, setEditingOverride] = useState(false)
 
-  const status = budgetStatus(summarize(periodTransactions).netExpense, amount)
+  const tail = !isCycle && payday ? payCycleTailBeforeMonth(payday, periodKey) : null
+  const tailTransactions = useMemo(
+    () => (tail ? (data ?? []).filter((t) => t.occurred_on >= tail.start && t.occurred_on <= tail.end) : []),
+    [data, tail],
+  )
+  const tailNet = netExpenseInRange(data ?? [], tail)
+  const status = budgetStatus(summarize(periodTransactions).netExpense + tailNet, amount)
+  const tailNote = budgetTailNote(tailNet, tail)
 
   const removeBudget = async (budget) => {
     try {
@@ -72,6 +81,7 @@ export default function BudgetsPage() {
               {status.remaining >= 0 ? `${formatMoney(status.remaining)} left` : `${formatMoney(status.overBy)} over`}
               {override ? ` · custom budget for this ${periodLabel}` : ''}
             </p>
+            {tailNote && <p className="mt-2 text-[12px] text-muted">{tailNote}</p>}
             <BudgetAlert status={status} subject={isCycle ? 'your pay-cycle budget' : undefined} />
           </>
         )}
@@ -116,10 +126,17 @@ export default function BudgetsPage() {
         </div>
       </Card>
 
-      <CategoryBudgetsSection periodKey={periodKey} periodType={periodType} rangeLabel={rangeLabel} transactions={periodTransactions} />
+      <CategoryBudgetsSection
+        periodKey={periodKey}
+        periodType={periodType}
+        rangeLabel={rangeLabel}
+        transactions={periodTransactions}
+        tailTransactions={tailTransactions}
+      />
 
       <p className="px-1 text-xs leading-relaxed text-muted">
         Limits cover net spending (expenses minus refunds) for that category. Transfers such as savings or investments never count.
+        {!isCycle && payday && ' In Calendar month, they also include anything spent after payday but before the month started.'}
       </p>
     </div>
   )
