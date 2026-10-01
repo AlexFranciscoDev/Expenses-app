@@ -147,14 +147,29 @@ export function summariesByRange(transactions, ranges) {
 }
 
 /**
+ * Transfer amounts grouped by category, for categories whose name is in `names`
+ * (case-insensitive) — e.g. just Savings/Investments, sorted by amount descending.
+ */
+export function transfersByCategoryNames(transactions, categoriesById, names) {
+  const nameSet = new Set(names.map((n) => n.toLowerCase()))
+  const totals = new Map()
+  for (const t of transactions) {
+    if (t.type !== 'transfer') continue
+    const category = categoriesById.get(t.category_id)
+    if (!category || !nameSet.has(category.name.toLowerCase())) continue
+    totals.set(category.id, (totals.get(category.id) ?? 0) + t.amount_cents)
+  }
+  return [...totals.entries()]
+    .map(([categoryId, amount]) => ({ categoryId, category: categoriesById.get(categoryId), amount }))
+    .sort((a, b) => b.amount - a.amount)
+}
+
+/**
  * Money moved to Savings or Investments — counts against the GLOBAL budget only
  * (never a category limit, and never Income/Net spending/Saved elsewhere).
  */
 export function budgetedTransferAmount(transactions, categoriesById) {
-  return transactions
-    .filter((t) => t.type === 'transfer')
-    .filter((t) => BUDGETED_TRANSFER_NAMES.includes((categoriesById.get(t.category_id)?.name ?? '').toLowerCase()))
-    .reduce((sum, t) => sum + t.amount_cents, 0)
+  return transfersByCategoryNames(transactions, categoriesById, BUDGETED_TRANSFER_NAMES).reduce((sum, r) => sum + r.amount, 0)
 }
 
 /** Net expense of transactions whose date falls within `range` (inclusive). `range` may be null. */

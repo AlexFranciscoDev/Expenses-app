@@ -12,6 +12,7 @@ import {
   summariesByMonth,
   summariesByRange,
   transactionSign,
+  transfersByCategoryNames,
 } from './finance.js'
 
 const tx = (type, amount_cents, category_id = 'food', extra = {}) => ({
@@ -75,6 +76,32 @@ describe('refunds by category', () => {
     expect(rows[0].share).toBe(75)
     expect(rows[2].net).toBe(-500)
     expect(rows[2].share).toBe(0)
+  })
+})
+
+describe('transfersByCategoryNames', () => {
+  const cats = new Map([
+    ['savings', { id: 'savings', name: 'Savings' }],
+    ['investments', { id: 'investments', name: 'Investments' }],
+    ['between', { id: 'between', name: 'Between accounts' }],
+  ])
+
+  it('groups per category, sorted by amount descending, ignoring other names/types', () => {
+    const list = [
+      tx('transfer', 20000, 'savings'),
+      tx('transfer', 10000, 'savings'),
+      tx('transfer', 50000, 'investments'),
+      tx('transfer', 5000, 'between'),
+      tx('expense', 100, 'savings'),
+    ]
+    expect(transfersByCategoryNames(list, cats, ['savings', 'investments'])).toEqual([
+      { categoryId: 'investments', category: cats.get('investments'), amount: 50000 },
+      { categoryId: 'savings', category: cats.get('savings'), amount: 30000 },
+    ])
+  })
+
+  it('returns an empty list when there are none', () => {
+    expect(transfersByCategoryNames([tx('transfer', 100, 'between')], cats, ['savings'])).toEqual([])
   })
 })
 
