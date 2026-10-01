@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Info, TriangleAlert } from 'lucide-react'
+import { ChevronRight, Info, TriangleAlert } from 'lucide-react'
 import { BUDGET_MESSAGES } from '../../constants/copy.js'
 import { formatMoney } from '../../utils/money.js'
 import Card from '../ui/Card.jsx'
@@ -29,47 +29,44 @@ export function BudgetAlert({ status, subject }) {
   )
 }
 
-export default function BudgetSummaryCard({ status, income, netExpense, periodLabel = 'month', subject, tailNote }) {
+/**
+ * Secondary, spending-limit-focused card. The headline "how much money do I
+ * actually have" figure lives in SavingsCard now — this is just the budget ceiling.
+ */
+export default function BudgetSummaryCard({ status, periodLabel = 'month', subject, tailNote }) {
   const hasBudget = status.level !== 'none'
   const over = status.level === 'over'
 
+  if (!hasBudget) {
+    return (
+      <Link
+        to="/budgets"
+        className="flex items-center justify-between rounded-card border border-dashed border-line bg-surface px-4 py-3.5 text-[13px] font-semibold text-brand hover:bg-brand-soft"
+      >
+        Set a {periodLabel === 'month' ? 'monthly' : 'pay-cycle'} budget
+        <ChevronRight size={16} />
+      </Link>
+    )
+  }
+
   return (
     <Card className="p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-        {over ? 'Over budget' : hasBudget ? 'Budget left' : `Spent this ${periodLabel}`}
-      </p>
-      <p className={`tabular mt-1 text-[34px] font-semibold leading-tight tracking-tight ${over ? 'text-negative' : ''}`}>
-        {hasBudget ? formatMoney(over ? status.overBy : status.remaining) : formatMoney(netExpense)}
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{over ? 'Over budget' : 'Budget left'}</p>
+      <p className={`tabular mt-1 text-[28px] font-semibold leading-tight tracking-tight ${over ? 'text-negative' : ''}`}>
+        {formatMoney(over ? status.overBy : status.remaining)}
       </p>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
-        <div>
-          <p className="text-xs text-muted">Income</p>
-          <p className="tabular text-[15px] font-semibold">{formatMoney(income)}</p>
+      <div className="mt-3">
+        <div className="mb-2 flex items-baseline justify-between text-xs">
+          <span className="text-muted">
+            <span className="tabular font-semibold text-ink">{formatMoney(status.spent)}</span> of {formatMoney(status.budget)}
+          </span>
+          <span className={`tabular font-semibold ${over ? 'text-negative' : 'text-ink-soft'}`}>{Math.round(status.usedPct)}%</span>
         </div>
-        <div>
-          <p className="text-xs text-muted">Net spending</p>
-          <p className="tabular text-[15px] font-semibold">{formatMoney(netExpense)}</p>
-        </div>
+        <ProgressBar value={status.usedPct} tone={BAR_TONE[status.level]} />
+        {tailNote && <p className="mt-2 text-[12px] text-muted">{tailNote}</p>}
+        <BudgetAlert status={status} subject={subject} />
       </div>
-
-      {hasBudget ? (
-        <div className="mt-4">
-          <div className="mb-2 flex items-baseline justify-between text-xs">
-            <span className="text-muted">
-              <span className="tabular font-semibold text-ink">{formatMoney(status.spent)}</span> of {formatMoney(status.budget)}
-            </span>
-            <span className={`tabular font-semibold ${over ? 'text-negative' : 'text-ink-soft'}`}>{Math.round(status.usedPct)}%</span>
-          </div>
-          <ProgressBar value={status.usedPct} tone={BAR_TONE[status.level]} />
-          {tailNote && <p className="mt-2 text-[12px] text-muted">{tailNote}</p>}
-          <BudgetAlert status={status} subject={subject} />
-        </div>
-      ) : (
-        <Link to="/budgets" className="mt-4 block rounded-2xl bg-brand-soft px-3 py-2.5 text-center text-[13px] font-semibold text-brand">
-          Set a {periodLabel === 'month' ? 'monthly' : 'pay-cycle'} budget
-        </Link>
-      )}
     </Card>
   )
 }

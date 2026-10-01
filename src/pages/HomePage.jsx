@@ -100,16 +100,15 @@ export default function HomePage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start md:gap-6">
           <div className="flex flex-col gap-4">
-            <BudgetSummaryCard
-              status={status}
+            <SavingsCard
               income={current.income}
               netExpense={current.netExpense}
+              saved={current.saved}
+              savingsRate={current.savingsRate}
               periodLabel={periodLabel}
-              subject={subject}
-              tailNote={tailNote}
             />
+            <BudgetSummaryCard status={status} periodLabel={periodLabel} subject={subject} tailNote={tailNote} />
             <CategoryBudgetAlerts rows={categoryAlerts} />
-            <SavingsCard saved={current.saved} savingsRate={current.savingsRate} periodLabel={periodLabel} />
             <MonthComparison change={percentChange(current.netExpense, previous.netExpense)} isCurrentMonth={isCurrentPeriod} periodLabel={periodLabel} />
           </div>
           <div className="flex flex-col gap-4">

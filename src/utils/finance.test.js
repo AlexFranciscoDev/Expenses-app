@@ -33,6 +33,16 @@ describe('summarize', () => {
     expect(s.savingsRate).toBeCloseTo(43.33, 2)
   })
 
+  it('nets out every income, including one-off extras, regardless of order (paid 650, -10 food, +50 gift = 690)', () => {
+    const s = summarize([
+      tx('income', 65000, 'salary'),
+      tx('expense', 1000, 'food'),
+      tx('income', 5000, 'other_income'),
+    ])
+    expect(s.income).toBe(70000)
+    expect(s.saved).toBe(69000)
+  })
+
   it('ignores transfers', () => {
     const s = summarize([tx('income', 100000, 'salary'), tx('transfer', 50000, 'savings'), tx('expense', 20000)])
     expect(s).toMatchObject({ income: 100000, netExpense: 20000, saved: 80000 })
