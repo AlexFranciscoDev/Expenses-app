@@ -109,7 +109,7 @@ export default function HomePage() {
               tailNote={tailNote}
             />
             <CategoryBudgetAlerts rows={categoryAlerts} />
-            <SavingsCard saved={current.saved} savingsRate={current.savingsRate} />
+            <SavingsCard saved={current.saved} savingsRate={current.savingsRate} periodLabel={periodLabel} />
             <MonthComparison change={percentChange(current.netExpense, previous.netExpense)} isCurrentMonth={isCurrentPeriod} periodLabel={periodLabel} />
           </div>
           <div className="flex flex-col gap-4">

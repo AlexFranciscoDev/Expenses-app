@@ -2,7 +2,7 @@ import { PiggyBank } from 'lucide-react'
 import { formatMoney } from '../../utils/money.js'
 import Card from '../ui/Card.jsx'
 
-export default function SavingsCard({ saved, savingsRate }) {
+export default function SavingsCard({ saved, savingsRate, periodLabel = 'month' }) {
   const negative = saved < 0
   return (
     <Card className="flex items-center gap-4 p-4">
@@ -10,7 +10,7 @@ export default function SavingsCard({ saved, savingsRate }) {
         <PiggyBank size={19} />
       </span>
       <div className="flex-1">
-        <p className="text-xs text-muted">{negative ? 'Spent more than earned' : 'Saved this month'}</p>
+        <p className="text-xs text-muted">{negative ? 'Spent more than earned' : `Saved this ${periodLabel}`}</p>
         <p className={`tabular text-[17px] font-semibold ${negative ? 'text-negative' : ''}`}>{formatMoney(saved)}</p>
       </div>
       <div className="text-right">
