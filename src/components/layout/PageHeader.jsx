@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 export default function PageHeader({ title, subtitle, back, actions }) {
   const navigate = useNavigate()
   return (
-    <header className="flex items-center gap-3 pb-4 pt-5 lg:pt-4">
+    <header className="flex items-center gap-3 pb-4 pt-5 xl:pt-4">
       {back && (
         <button
           type="button"
@@ -16,7 +16,7 @@ export default function PageHeader({ title, subtitle, back, actions }) {
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-[22px] font-semibold tracking-tight lg:text-2xl">{title}</h1>
+        <h1 className="truncate text-[22px] font-semibold tracking-tight xl:text-2xl">{title}</h1>
         {subtitle && <p className="truncate text-[13px] text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}

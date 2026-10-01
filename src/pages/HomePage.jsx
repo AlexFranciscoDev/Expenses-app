@@ -74,7 +74,7 @@ export default function HomePage() {
 
   return (
     <>
-      <header className="flex items-center justify-between pb-4 pt-5 lg:pt-4">
+      <header className="flex items-center justify-between pb-4 pt-5 xl:pt-4">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">
             {greeting()}
@@ -85,20 +85,20 @@ export default function HomePage() {
         <Link
           to="/settings"
           aria-label="Settings"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface text-ink-soft hover:bg-subtle lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface text-ink-soft hover:bg-subtle xl:hidden"
         >
           <Settings size={18} />
         </Link>
       </header>
 
-      <PeriodSelector className="mb-4 lg:max-w-md" />
+      <PeriodSelector className="mb-4 xl:max-w-md" />
 
       {error ? (
         <ErrorNotice error={error} onRetry={reload} />
       ) : loading && !data ? (
         <Spinner className="h-72" />
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start md:gap-6">
           <div className="flex flex-col gap-4">
             <BudgetSummaryCard
               status={status}

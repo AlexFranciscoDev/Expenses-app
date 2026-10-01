@@ -145,10 +145,10 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
   return (
     <form
       onSubmit={submit}
-      className="flex h-dvh flex-col bg-surface lg:h-auto lg:max-h-[calc(100dvh-4rem)] lg:rounded-3xl lg:border lg:border-line lg:shadow-float"
+      className="flex h-dvh flex-col bg-surface xl:h-auto xl:max-h-[calc(100dvh-4rem)] xl:rounded-3xl xl:border xl:border-line xl:shadow-float"
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pb-2 pt-3 pt-safe lg:px-6 lg:pt-5">
+      <div className="flex items-center gap-3 px-5 pb-2 pt-3 pt-safe xl:px-6 xl:pt-5">
         <button
           type="button"
           onClick={onClose}
@@ -162,7 +162,7 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4 lg:px-6">
+      <div className="flex-1 overflow-y-auto px-5 pb-4 xl:px-6">
         <SegmentedControl options={TRANSACTION_TYPES} value={type} onChange={changeType} className="mt-2" />
 
         {coarse ? (
@@ -257,7 +257,7 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
 
         <div className="mb-4">
           <SectionLabel>Date</SectionLabel>
-          <div className="no-scrollbar flex gap-2 overflow-x-auto">
+          <div className="no-scrollbar scroll-fade-x flex gap-2 overflow-x-auto">
             <Chip active={date === todayISO()} onClick={() => setDate(todayISO())}>
               Today
             </Chip>
@@ -287,7 +287,7 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
 
         <div className="mb-4">
           <SectionLabel>Paid with (optional)</SectionLabel>
-          <div className="no-scrollbar flex gap-2 overflow-x-auto">
+          <div className="no-scrollbar scroll-fade-x flex gap-2 overflow-x-auto">
             {PAYMENT_METHODS.map((p) => (
               <Chip key={p.key} active={paymentMethod === p.key} onClick={() => setPaymentMethod(paymentMethod === p.key ? null : p.key)}>
                 {p.label}
@@ -309,7 +309,7 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
       </div>
 
       {/* Bottom panel */}
-      <div className="border-t border-line bg-surface px-4 pb-safe pt-3 lg:px-6 lg:pb-5">
+      <div className="border-t border-line bg-surface px-5 pb-safe pt-3 xl:px-6 xl:pb-5">
         {error && (
           <p role="alert" className="mb-2 text-center text-sm font-medium text-negative">
             {error}

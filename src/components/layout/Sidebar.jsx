@@ -25,7 +25,7 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const { profile } = useData()
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface px-4 py-6 lg:flex">
+    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface px-4 py-6 xl:flex">
       <div className="mb-8 flex items-center gap-2.5 px-2">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-sm font-bold text-white">L</div>
         <span className="text-lg font-semibold tracking-tight">Ledger</span>

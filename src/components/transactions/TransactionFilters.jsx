@@ -26,7 +26,7 @@ export default function TransactionFilters({ filters, onChange }) {
         />
       </div>
 
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <div className="no-scrollbar scroll-fade-x -mx-5 flex gap-2 overflow-x-auto px-5 sm:mx-0 sm:px-0">
         <Chip active={!filters.type} onClick={() => set({ type: null })}>
           All
         </Chip>

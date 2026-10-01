@@ -49,8 +49,8 @@ export default function TransactionsPage() {
   const totals = summarize(filtered)
 
   return (
-    <div className="lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-8">
-      <div className="lg:sticky lg:top-6 lg:self-start">
+    <div className="xl:grid xl:grid-cols-[320px_minmax(0,1fr)] xl:gap-8">
+      <div className="xl:sticky xl:top-6 xl:self-start">
         <PageHeader title="Transactions" />
         <div className="flex flex-col gap-3">
           <SegmentedControl options={SCOPES} value={scope} onChange={setScope} size="sm" />
@@ -61,7 +61,7 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      <div className="mt-4 lg:mt-5">
+      <div className="mt-4 xl:mt-5">
         {scope === 'custom' && (
           <p className="mb-2 px-1 text-[13px] text-muted">
             {formatShortDate(customRange.start)} – {formatShortDate(customRange.end)}

@@ -24,7 +24,7 @@ export default function BottomNav() {
   const navigate = useNavigate()
   const [first, second, third, fourth] = NAV_ITEMS
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-safe lg:hidden" aria-label="Main">
+    <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-safe xl:hidden" aria-label="Main">
       <div className="mx-auto mb-2 flex max-w-md items-center rounded-[1.75rem] border border-line bg-surface/95 px-2 py-1.5 shadow-float backdrop-blur">
         <NavItem item={first} />
         <NavItem item={second} />

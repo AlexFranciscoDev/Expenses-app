@@ -29,14 +29,14 @@ export default function AnalyticsPage() {
 
   return (
     <>
-      <PeriodSelector className="mb-4 lg:max-w-md" />
+      <PeriodSelector className="mb-4 xl:max-w-md" />
 
       {error ? (
         <ErrorNotice error={error} onRetry={reload} />
       ) : loading && !data ? (
         <Spinner className="h-72" />
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start md:gap-6">
           <Card className="p-4">
             <h2 className="mb-4 text-[15px] font-semibold">Spending by category</h2>
             {rows.length ? (
