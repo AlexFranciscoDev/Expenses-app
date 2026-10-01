@@ -16,7 +16,15 @@ import { useMonth } from '../context/MonthContext.jsx'
 import { useBudgetedCategoryIds, useMonthBudget } from '../hooks/useMonthBudget.js'
 import { usePeriodSummaries } from '../hooks/usePeriodSummaries.js'
 import { payCycleTailBeforeMonth } from '../utils/dates.js'
-import { budgetStatus, categoryBreakdown, netByCategory, netExpenseInRange, percentChange, resolveBudget } from '../utils/finance.js'
+import {
+  budgetedTransferAmount,
+  budgetStatus,
+  categoryBreakdown,
+  netByCategory,
+  netExpenseInRange,
+  percentChange,
+  resolveBudget,
+} from '../utils/finance.js'
 
 function greeting() {
   const h = new Date().getHours()
@@ -50,7 +58,14 @@ export default function HomePage() {
     [data, tail],
   )
   const tailNet = netExpenseInRange(data ?? [], tail)
-  const status = current ? budgetStatus(current.netExpense + tailNet, budget) : null
+  // Savings/Investments transfers reduce the GLOBAL budget (they're still money leaving
+  // this period's spending power) — but never Income/Net spending/Saved, and never a
+  // category limit.
+  const budgetTransfers = useMemo(
+    () => budgetedTransferAmount([...periodTransactions, ...tailTransactions], categoriesById),
+    [periodTransactions, tailTransactions, categoriesById],
+  )
+  const status = current ? budgetStatus(current.netExpense + tailNet + budgetTransfers, budget) : null
   const tailNote = budgetTailNote(tailNet, tail)
 
   const breakdown = useMemo(() => categoryBreakdown(periodTransactions, categoriesById), [periodTransactions, categoriesById])

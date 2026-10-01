@@ -16,14 +16,14 @@ import { useMonthBudget } from '../hooks/useMonthBudget.js'
 import { usePeriodSummaries } from '../hooks/usePeriodSummaries.js'
 import { deleteBudget, saveBudget } from '../services/budgets.js'
 import { payCycleTailBeforeMonth } from '../utils/dates.js'
-import { budgetStatus, netExpenseInRange, summarize } from '../utils/finance.js'
+import { budgetedTransferAmount, budgetStatus, netExpenseInRange, summarize } from '../utils/finance.js'
 import { formatMoney } from '../utils/money.js'
 
 const BAR_TONE = { ok: 'brand', near: 'warning', high: 'warning', reached: 'warning', over: 'negative' }
 
 export default function BudgetsPage() {
   const { payday, periodMode, range, rangeLabel } = useMonth()
-  const { reloadBudgets } = useData()
+  const { categoriesById, reloadBudgets } = useData()
   const toast = useToast()
 
   const isCycle = periodMode === 'payday'
@@ -42,7 +42,12 @@ export default function BudgetsPage() {
     [data, tail],
   )
   const tailNet = netExpenseInRange(data ?? [], tail)
-  const status = budgetStatus(summarize(periodTransactions).netExpense + tailNet, amount)
+  // Savings/Investments transfers reduce the GLOBAL budget only — never a category limit.
+  const budgetTransfers = useMemo(
+    () => budgetedTransferAmount([...periodTransactions, ...tailTransactions], categoriesById),
+    [periodTransactions, tailTransactions, categoriesById],
+  )
+  const status = budgetStatus(summarize(periodTransactions).netExpense + tailNet + budgetTransfers, amount)
   const tailNote = budgetTailNote(tailNet, tail)
 
   const removeBudget = async (budget) => {
@@ -135,8 +140,9 @@ export default function BudgetsPage() {
       />
 
       <p className="px-1 text-xs leading-relaxed text-muted">
-        Limits cover net spending (expenses minus refunds) for that category. Transfers such as savings or investments never count.
-        {!isCycle && payday && ' In Calendar month, they also include anything spent after payday but before the month started.'}
+        The monthly budget also counts money moved to Savings or Investments — everything else, including Between accounts and
+        Loans/IOUs, never does. Category limits only ever cover net spending (expenses minus refunds) for that category.
+        {!isCycle && payday && ' In Calendar month, both also include anything spent or moved after payday but before the month started.'}
       </p>
     </div>
   )

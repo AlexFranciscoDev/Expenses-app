@@ -11,6 +11,15 @@ export const CATEGORY_GROUPS = [
 
 export const GROUP_LABELS = Object.fromEntries(CATEGORY_GROUPS.map((g) => [g.key, g.label]))
 
+/**
+ * Transfer categories that still count against the GLOBAL budget, because moving
+ * money there is a spending decision (vs. "Between accounts" or "Loans / IOUs",
+ * which just relocate money you still have). Matched by name, case-insensitively,
+ * since these are plain user categories with no separate "kind" of their own.
+ * Category-level limits are unaffected — they only ever apply to expense categories.
+ */
+export const BUDGETED_TRANSFER_NAMES = ['savings', 'investments']
+
 export const CATEGORY_KINDS = [
   { key: 'expense', label: 'Expense' },
   { key: 'income', label: 'Income' },

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  budgetedTransferAmount,
   budgetStatus,
   categoryBreakdown,
   netByCategory,
@@ -74,6 +75,30 @@ describe('refunds by category', () => {
     expect(rows[0].share).toBe(75)
     expect(rows[2].net).toBe(-500)
     expect(rows[2].share).toBe(0)
+  })
+})
+
+describe('budgetedTransferAmount', () => {
+  const cats = new Map([
+    ['savings', { name: 'Savings' }],
+    ['investments', { name: 'Investments' }],
+    ['between', { name: 'Between accounts' }],
+    ['loans', { name: 'Loans / IOUs' }],
+  ])
+
+  it('sums Savings and Investments transfers only', () => {
+    const list = [
+      tx('transfer', 20000, 'savings'),
+      tx('transfer', 10000, 'investments'),
+      tx('transfer', 5000, 'between'),
+      tx('transfer', 3000, 'loans'),
+      tx('expense', 100, 'savings'), // wrong type on purpose, must not count
+    ]
+    expect(budgetedTransferAmount(list, cats)).toBe(30000)
+  })
+
+  it('returns 0 when there are none', () => {
+    expect(budgetedTransferAmount([tx('transfer', 5000, 'between')], cats)).toBe(0)
   })
 })
 

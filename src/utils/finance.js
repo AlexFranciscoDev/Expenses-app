@@ -1,6 +1,10 @@
 // Pure financial calculations. All amounts are integer cents.
-// Transfers never count towards income, expenses or savings.
+// Transfers never count towards income, expenses or savings — except money moved to
+// Savings/Investments, which still counts against the GLOBAL budget (see
+// budgetedTransferAmount): it's money leaving this period's spending power, even
+// though it isn't "spending" in the income/saved sense.
 
+import { BUDGETED_TRANSFER_NAMES } from '../constants/categoryGroups.js'
 import { BUDGET_HIGH_PCT, BUDGET_NEAR_PCT } from '../constants/budgetThresholds.js'
 import { monthKeyOf } from './dates.js'
 
@@ -140,6 +144,17 @@ export function summariesByRange(transactions, ranges) {
     end,
     ...summarize(transactions.filter((t) => t.occurred_on >= start && t.occurred_on <= end)),
   }))
+}
+
+/**
+ * Money moved to Savings or Investments — counts against the GLOBAL budget only
+ * (never a category limit, and never Income/Net spending/Saved elsewhere).
+ */
+export function budgetedTransferAmount(transactions, categoriesById) {
+  return transactions
+    .filter((t) => t.type === 'transfer')
+    .filter((t) => BUDGETED_TRANSFER_NAMES.includes((categoriesById.get(t.category_id)?.name ?? '').toLowerCase()))
+    .reduce((sum, t) => sum + t.amount_cents, 0)
 }
 
 /** Net expense of transactions whose date falls within `range` (inclusive). `range` may be null. */
