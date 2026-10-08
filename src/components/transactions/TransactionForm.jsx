@@ -5,7 +5,6 @@ import { ERRORS, friendlyError } from '../../constants/copy.js'
 import { PAYMENT_METHODS, TRANSACTION_TYPES } from '../../constants/transactionTypes.js'
 import { useData } from '../../context/DataContext.jsx'
 import { useCoarsePointer } from '../../hooks/useCoarsePointer.js'
-import { useNativeDatePicker } from '../../hooks/useNativeDatePicker.js'
 import { createCategory } from '../../services/categories.js'
 import { categoryUsage } from '../../services/transactions.js'
 import { pressKey } from '../../utils/amountInput.js'
@@ -17,6 +16,7 @@ import Button from '../ui/Button.jsx'
 import Chip from '../ui/Chip.jsx'
 import { Input, Textarea } from '../ui/Field.jsx'
 import Modal from '../ui/Modal.jsx'
+import NativeDateInput from '../ui/NativeDateInput.jsx'
 import SegmentedControl from '../ui/SegmentedControl.jsx'
 import AmountDisplay from './AmountDisplay.jsx'
 import AmountKeypad from './AmountKeypad.jsx'
@@ -60,7 +60,6 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
   const [linkedExpense, setLinkedExpense] = useState(initialLinkedExpense)
 
   const [keypadOpen, setKeypadOpen] = useState(true)
-  const { ref: dateInputRef, open: openNativeDatePicker } = useNativeDatePicker()
   const [linkPickerOpen, setLinkPickerOpen] = useState(false)
   const [creatingCategory, setCreatingCategory] = useState(false)
   const [usage, setUsage] = useState(new Map())
@@ -98,11 +97,6 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
   const onKey = (key) => {
     setError(null)
     setAmount((current) => pressKey(current, key))
-  }
-
-  const openDatePicker = () => {
-    setKeypadOpen(false)
-    openNativeDatePicker()
   }
 
   const handleCreateCategory = async (fields) => {
@@ -145,10 +139,10 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
   return (
     <form
       onSubmit={submit}
-      className="flex h-dvh flex-col bg-surface xl:h-auto xl:max-h-[calc(100dvh-4rem)] xl:rounded-3xl xl:border xl:border-line xl:shadow-float"
+      className="flex h-dvh flex-col bg-surface sm:h-auto sm:max-h-[calc(100dvh-4rem)] sm:rounded-3xl sm:border sm:border-line sm:shadow-float"
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 pb-2 pt-3 pt-safe xl:px-6 xl:pt-5">
+      <div className="flex items-center gap-3 px-5 pb-2 pt-3 pt-safe sm:px-6 sm:pt-5">
         <button
           type="button"
           onClick={onClose}
@@ -162,7 +156,7 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-5 pb-4 xl:px-6">
+      <div className="flex-1 overflow-y-auto px-5 pb-4 sm:px-6">
         <SegmentedControl options={TRANSACTION_TYPES} value={type} onChange={changeType} className="mt-2" />
 
         {coarse ? (
@@ -264,24 +258,20 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
             <Chip active={date === yesterday} onClick={() => setDate(yesterday)}>
               Yesterday
             </Chip>
-            <button
-              type="button"
-              onClick={openDatePicker}
-              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium ${
+            <label
+              className={`relative inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium ${
                 isOtherDate ? 'border-brand bg-brand-soft text-brand' : 'border-line text-ink-soft'
               }`}
             >
               <CalendarDays size={14} />
               {isOtherDate ? formatShortDate(date) : 'Other date'}
-              <input
-                ref={dateInputRef}
-                type="date"
+              <NativeDateInput
                 aria-label="Pick a date"
                 value={date}
+                onOpen={() => setKeypadOpen(false)}
                 onChange={(e) => e.target.value && setDate(e.target.value)}
-                className="sr-only"
               />
-            </button>
+            </label>
           </div>
         </div>
 
@@ -309,7 +299,7 @@ export default function TransactionForm({ initial = {}, initialLinkedExpense = n
       </div>
 
       {/* Bottom panel */}
-      <div className="border-t border-line bg-surface px-5 pb-safe pt-3 xl:px-6 xl:pb-5">
+      <div className="border-t border-line bg-surface px-5 pb-safe pt-3 sm:px-6 sm:pb-5">
         {error && (
           <p role="alert" className="mb-2 text-center text-sm font-medium text-negative">
             {error}

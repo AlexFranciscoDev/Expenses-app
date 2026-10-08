@@ -45,7 +45,7 @@ export default function TransactionFormPage() {
   }
 
   let content
-  if (loading || dataLoading) content = <Spinner className="h-dvh xl:h-96" />
+  if (loading || dataLoading) content = <Spinner className="h-dvh sm:h-96" />
   else if (error) content = <ErrorNotice error={error} onRetry={reload} />
   else if (isEditing && !data.transaction) content = <ErrorNotice error={{ message: 'Not found' }} />
   else {
@@ -65,8 +65,8 @@ export default function TransactionFormPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-surface xl:flex xl:items-center xl:justify-center xl:bg-canvas xl:p-8">
-      <div className="w-full xl:max-w-lg">{content}</div>
+    <div className="min-h-dvh bg-surface sm:flex sm:items-center sm:justify-center sm:bg-canvas sm:p-8">
+      <div className="w-full sm:max-w-lg">{content}</div>
     </div>
   )
 }
